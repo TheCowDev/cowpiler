@@ -12,5 +12,12 @@ fn main() {
 
     let builder = my_func.builder();
 
+    let other = builder.create_block();
+
+    let first_value = builder.const_i8(10);
+
+    let second_value = builder.const_i32(10);
+
+
     compiler.jit();
 }
