@@ -12,39 +12,39 @@ pub enum LangDataType {
 
 
 #[derive(Clone)]
-pub struct LangType {
+pub struct Type {
     data_type: LangDataType,
 }
 
-impl LangType {
-    pub fn void() -> Self { LangType { data_type: LangDataType::DataTypeVoid } }
+impl Type {
+    pub fn void() -> Self { Self { data_type: LangDataType::DataTypeVoid } }
 
     pub fn i8() -> Self {
-        LangType { data_type: LangDataType::DataTypeI8 }
+        Self { data_type: LangDataType::DataTypeI8 }
     }
 
     pub fn i16() -> Self {
-        LangType { data_type: LangDataType::DataTypeI16 }
+        Self { data_type: LangDataType::DataTypeI16 }
     }
 
     pub fn i32() -> Self {
-        LangType { data_type: LangDataType::DataTypeI32 }
+        Self { data_type: LangDataType::DataTypeI32 }
     }
 
     pub fn i64() -> Self {
-        LangType { data_type: LangDataType::DataTypeI64 }
+        Self { data_type: LangDataType::DataTypeI64 }
     }
 
     pub fn f32() -> Self {
-        LangType { data_type: LangDataType::DataTypeF32 }
+        Self { data_type: LangDataType::DataTypeF32 }
     }
 
     pub fn f64() -> Self {
-        LangType { data_type: LangDataType::DataTypeF64 }
+        Self { data_type: LangDataType::DataTypeF64 }
     }
 
     pub fn ptr() -> Self {
-        LangType { data_type: LangDataType::DataTypePtr }
+        Self { data_type: LangDataType::DataTypePtr }
     }
 
     pub fn is_float(&self) -> bool {
