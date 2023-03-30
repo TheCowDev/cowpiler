@@ -38,11 +38,20 @@ impl X86_64Encoder {
         self.writer.write_u8(modrm);
     }
 
+    pub(crate) fn add_reg_reg(&mut self, left: X86Register, right: X86Register) {
+        self.writer.write_u8(0x01);
+        let mut modrm: u8 = 0;
+        modrm |= 3 << 6; // set operation to 11 (register-to-register)
+        modrm |= right.encode() << 3; // set destination register
+        modrm |= left.encode(); // set source register
+        self.writer.write_u8(modrm);
+    }
+
     pub(crate) fn ret(&mut self) {
         self.writer.write_u8(0xC3);
     }
 
-    pub(crate) fn bytes(&self) -> &Vec<u8>{
+    pub(crate) fn bytes(&self) -> &Vec<u8> {
         self.writer.bytes()
     }
 }

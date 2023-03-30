@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::process::id;
 use crate::lang::value::Value;
 
 #[derive(PartialEq, Clone, Copy)]
@@ -45,25 +44,54 @@ pub(crate) struct X86_64Allocator {
 
 impl X86_64Allocator {
     pub(crate) fn new() -> Self {
-        X86_64Allocator { free_registers: vec![], allocated_registers: HashMap::new() }
+        let registers = vec![X86Register::RAX, X86Register::RCX,
+                             X86Register::RDX, X86Register::RBX, X86Register::RSP,
+                             X86Register::RBP, X86Register::RDI, X86Register::RSI, X86Register::R8,
+                             X86Register::R9, X86Register::R10, X86Register::R11,
+                             X86Register::R12, X86Register::R13, X86Register::R14, X86Register::R15,
+                             X86Register::XMM0, X86Register::XMM1, X86Register::XMM2, X86Register::XMM3,
+                             X86Register::XMM4, X86Register::XMM5, X86Register::XMM6, X86Register::XMM7,
+                             X86Register::XMM8, X86Register::XMM9, X86Register::XMM10, X86Register::XMM11,
+                             X86Register::XMM12, X86Register::XMM13, X86Register::XMM14,
+                             X86Register::XMM15, ];
+
+        X86_64Allocator { free_registers: registers, allocated_registers: HashMap::new() }
     }
 
     pub(crate) fn obtain_register_for_value(&mut self, value: Value) -> X86Register {
 
-        // the case where a register is available to put the value inn
-        if value.get_type().is_float() {
-            if let Some(idx) = self.free_registers.iter().position(|reg| reg.is_xmm()) {
-                return self.allocate_register(value, self.free_registers[idx]);
-            }
-        } else {
-            if let Some(idx) = self.free_registers.iter().position(|reg| !reg.is_xmm()) {
-                return self.allocate_register(value, self.free_registers[idx]);
-            }
+        // the case where a register is available to put the value in
+        if self.is_value_allocated(value.clone()) {
+            let id = value.get_id();
+            return *self.allocated_registers.get(&id).unwrap();
         }
+
+        let allocation = self.allocate_register(value);
+        if allocation.is_some() {
+            return allocation.unwrap();
+        }
+
 
         // the case where no register is available
         return X86Register::RAX;
     }
+
+    pub(crate) fn allocate_register(&mut self, value: Value) -> Option<X86Register> {
+
+        //for floating values, we allocate a xmm register
+        if value.get_type().is_float() {
+            if let Some(idx) = self.free_registers.iter().position(|reg| reg.is_xmm()) {
+                return Some(self.setup_allocate_register(value, self.free_registers[idx]));
+            }
+        } else {
+            if let Some(idx) = self.free_registers.iter().position(|reg| !reg.is_xmm()) {
+                return Some(self.setup_allocate_register(value, self.free_registers[idx]));
+            }
+        }
+
+        None
+    }
+
 
     pub(crate) fn free_register_from_value(&mut self, value: Value) -> bool {
         let id = value.get_id();
@@ -76,7 +104,21 @@ impl X86_64Allocator {
         false
     }
 
-    fn allocate_register(&mut self, value: Value, reg: X86Register) -> X86Register {
+    pub(crate) fn is_value_allocated(&mut self, value: Value) -> bool {
+        for register_key in self.allocated_registers.keys() {
+            if *register_key == value.get_id() {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    pub(crate) fn is_register_allocated(&mut self, reg: X86Register) -> bool {
+        return self.allocated_registers.values().any(|&val| val == reg);
+    }
+
+    fn setup_allocate_register(&mut self, value: Value, reg: X86Register) -> X86Register {
         self.free_registers.retain(|&current| current != reg);
         self.allocated_registers.insert(value.get_id(), reg);
         reg

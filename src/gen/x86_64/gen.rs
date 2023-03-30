@@ -49,7 +49,17 @@ impl X86_64Gen {
 
             Instr::ConstPtr { .. } => {}
 
-            Instr::Add { .. } => {}
+            Instr::Add { left_value, right_value, gen_value } => {
+                let left_reg = allocator.obtain_register_for_value(left_value.clone());
+                let right_reg = allocator.obtain_register_for_value(right_value.clone());
+                let result_reg = allocator.allocate_register(gen_value.clone()).unwrap();
+                if left_reg.is_xmm() {
+                    encode.add_reg_reg(left_reg, right_reg);
+                } else {
+                    encode.add_reg_reg(left_reg, right_reg);
+                    encode.mov_reg_to_reg(left_reg, result_reg);
+                }
+            }
 
             Instr::Sub { .. } => {}
 

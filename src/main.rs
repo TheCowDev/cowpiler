@@ -1,3 +1,5 @@
+extern crate core;
+
 use crate::compiler::Compiler;
 
 mod lang;
@@ -15,8 +17,10 @@ fn main() {
     {
         let builder = my_func.builder();
 
-        let value = builder.const_i64(420);
-        builder.ret(value);
+        let fist = builder.const_i64(10);
+        let second = builder.const_i64(420);
+        let add_result = builder.add(fist, second);
+        builder.ret(add_result);
 
         compiler.jit();
     }
