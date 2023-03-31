@@ -17,10 +17,13 @@ fn main() {
     {
         let builder = my_func.builder();
 
-        let fist = builder.const_i64(10);
-        let second = builder.const_i64(420);
-        let add_result = builder.add(fist, second);
-        builder.ret(add_result);
+        let block = builder.create_block();
+
+        builder.br(block);
+
+        builder.set_current_block(block);
+        let first = builder.const_i64(10);
+        builder.ret(first);
 
         compiler.jit();
     }

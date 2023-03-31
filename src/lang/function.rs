@@ -1,7 +1,6 @@
 use std::ptr;
 use crate::lang;
 use lang::lang_type::Type;
-use crate::lang::block::Block;
 use crate::lang::builder::Builder;
 
 pub struct Function {

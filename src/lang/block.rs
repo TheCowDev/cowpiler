@@ -1,5 +1,6 @@
 use crate::lang::instr::Instr;
 
+#[derive(Clone, Copy)]
 pub struct Block {
     id: usize,
 }
@@ -12,11 +13,12 @@ impl Block {
 
 pub(crate) struct LangBlock {
     instructions: Vec<Instr>,
+    offset: usize,
 }
 
 impl LangBlock {
     pub(crate) fn new() -> Self {
-        LangBlock { instructions: vec![] }
+        LangBlock { instructions: vec![], offset: 0 }
     }
 
     pub(crate) fn add_instr(&mut self, instruction: Instr) {
@@ -25,6 +27,14 @@ impl LangBlock {
 
     pub(crate) fn instructions(&mut self) -> &mut Vec<Instr> {
         &mut self.instructions
+    }
+
+    pub(crate) fn set_offset(&mut self, offset: usize) {
+        self.offset = offset
+    }
+
+    pub(crate) fn offset(&mut self) -> usize {
+        self.offset
     }
 }
 

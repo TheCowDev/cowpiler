@@ -3,11 +3,14 @@ use crate::lang::value::Value;
 
 #[derive(PartialEq, Clone, Copy)]
 pub(crate) enum X86Register {
+    // return value for int / ptr
     RAX,
     RCX,
     RDX,
     RBX,
+    // stack pointer
     RSP,
+    // base pointer
     RBP,
     RDI,
     RSI,
@@ -19,6 +22,7 @@ pub(crate) enum X86Register {
     R13,
     R14,
     R15,
+    // return value for float
     XMM0,
     XMM1,
     XMM2,
@@ -44,8 +48,8 @@ pub(crate) struct X86_64Allocator {
 
 impl X86_64Allocator {
     pub(crate) fn new() -> Self {
-        let registers = vec![X86Register::RAX, X86Register::RCX,
-                             X86Register::RDX, X86Register::RBX, X86Register::RSP,
+        let registers = vec![X86Register::RCX,
+                             X86Register::RDX,
                              X86Register::RBP, X86Register::RDI, X86Register::RSI, X86Register::R8,
                              X86Register::R9, X86Register::R10, X86Register::R11,
                              X86Register::R12, X86Register::R13, X86Register::R14, X86Register::R15,

@@ -7,7 +7,7 @@ pub(crate) struct X86_64Encoder {
 
 impl X86_64Encoder {
     pub(crate) fn new() -> Self {
-        X86_64Encoder { writer: ByteWriter::new() }
+        Self { writer: ByteWriter::new() }
     }
 
     pub(crate) fn move_reg_i64(&mut self, dest: X86Register, value: i64) -> usize {
@@ -45,6 +45,67 @@ impl X86_64Encoder {
         modrm |= right.encode() << 3; // set destination register
         modrm |= left.encode(); // set source register
         self.writer.write_u8(modrm);
+    }
+
+    pub(crate) fn push_reg(&mut self, reg: X86Register) {
+        if reg.is_xmm() {
+            self.writer.write_u8(0x48); // rex.w prefix
+            self.writer.write_u8(0x83); // opcode for 'sub'
+            self.writer.write_u8(0xEC); // modR/M byte for 'sub' with RSP
+            self.writer.write_u8(0x10); //Immediate 16
+        } else {
+
+            // below r8 can have a for condense way to be pushed
+            if reg.encode() < X86Register::R8.encode() {
+                self.writer.write_u8(0x50 + reg.encode());
+            } else {
+                self.writer.write_u8(0x41); //rex prefix for extended registers
+                self.writer.write_u8(0x50 + reg.encode() - X86Register::R8.encode());
+            }
+        }
+    }
+
+    pub(crate) fn pop_reg(&mut self, reg: X86Register) {
+        if reg.is_xmm() {
+            // movaps xmmN, [rsp]
+            self.writer.write_u8(0x48);
+            self.writer.write_u8(0x0F);
+            self.writer.write_u8(0x28);
+            self.writer.write_u8(0x04 | (reg.encode() << 3));
+
+            // movaps [rsp], xmm
+            self.writer.write_u8(0x48);
+            self.writer.write_u8(0x83);
+            self.writer.write_u8(0xC4);
+            self.writer.write_u8(0x10);
+        } else {
+            // below r8 have a condense way to be pushed
+            if reg.encode() < X86Register::R8.encode() {
+                self.writer.write_u8(0x58 + reg.encode());
+            } else {
+                self.writer.write_u8(0x41);
+                self.writer.write_u8(0x58 + (reg.encode() - X86Register::R8.encode()));
+            }
+        }
+    }
+
+    pub(crate) fn jmp(&mut self) -> usize {
+        self.writer.write_u8(0xE9);
+        self.writer.write_i32(0)
+    }
+
+    pub(crate) fn cond_jmp(&mut self, reg: X86Register) -> (usize, usize) {
+        // cmp reg,0
+        self.writer.write_u8(0x48);
+        self.writer.write_u8(0x83);
+        self.writer.write_u8(0xF8 | (reg.encode() & 7));
+        let false_offset = self.writer.write_u8(0x00);
+
+        // jz, jump if zero
+        self.writer.write_u8(0x0F);
+        self.writer.write_u8(0x084);
+        let true_offset = self.writer.write_u8(0);
+        (true_offset, false_offset)
     }
 
     pub(crate) fn ret(&mut self) {
