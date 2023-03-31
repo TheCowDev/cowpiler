@@ -9,13 +9,13 @@ use crate::misc::byte_writer::ByteWriter;
 
 #[derive(Clone)]
 struct BlockOffset {
-    block_from: usize,
     offset: usize,
-    block_to: usize,
+    block: usize,
 }
 
 #[derive(Clone)]
 pub struct FunctionOffset {
+    func_name: String,
     offset: usize,
     func_id: usize,
 }
@@ -37,22 +37,21 @@ impl X86_64Gen {
         }
 
         // replace the offset of all functions
-        for offset in func_offsets {
-            
-        }
+        for offset in func_offsets {}
     }
 
     fn gen_func(&mut self, func: &mut Function, func_offsets: &mut Vec<FunctionOffset>) {
         let mut func_offset: Vec<FunctionOffset> = vec![];
         let mut block_offset: Vec<BlockOffset> = vec![];
-        let mut builder = func.builder();
+        let func_name = func.name().clone();
+        let builder = func.builder();
         let mut allocator = X86_64Allocator::new();
         let mut encoder = X86_64Encoder::new();
 
         for block in builder.blocks() {
             block.set_offset(encoder.bytes().len());
             for instr in block.instructions() {
-                self.gen_instr(instr, &mut allocator, &mut encoder, &mut func_offset, &mut block_offset);
+                self.gen_instr(&func_name, instr, &mut allocator, &mut encoder, &mut func_offset, &mut block_offset);
             }
         }
 
@@ -62,11 +61,10 @@ impl X86_64Gen {
             writer.rewrite_i32(offset.offset, builder.blocks()[offset.block].offset() as i32 - offset.offset as i32 - 4);
         }
 
-        func.set_func_offsets(&func_offset);
         func.set_code(writer.bytes())
     }
 
-    fn gen_instr(&mut self, instr: &mut Instr, allocator: &mut X86_64Allocator, encode: &mut X86_64Encoder,
+    fn gen_instr(&mut self, func_name: &String, instr: &mut Instr, allocator: &mut X86_64Allocator, encode: &mut X86_64Encoder,
                  func_offsets: &mut Vec<FunctionOffset>, block_offsets: &mut Vec<BlockOffset>) {
         match instr {
             Instr::ConstInt128 { .. } => {}

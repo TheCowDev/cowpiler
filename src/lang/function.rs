@@ -41,6 +41,10 @@ impl Function {
         &self.code
     }
 
+    pub fn name(&self) -> &String{
+        &self.name
+    }
+
     pub fn set_jit_ptr(&mut self, ptr: *mut u8) {
         self.jit_ptr = ptr;
     }
