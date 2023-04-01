@@ -11,7 +11,6 @@ pub struct Builder {
 
 impl Builder {
     pub fn new() -> Self {
-
         let mut builder = Builder { blocks: vec![], values: vec![], current_block: 0 };
         builder.blocks.push(LangBlock::new());
         builder
@@ -143,7 +142,7 @@ impl Builder {
         self.blocks[self.current_block].add_instr(instr);
     }
 
-    pub fn cond_br(&mut self, block_true: Block, block_false: Block, value_cond: Value) {
+    pub fn cond_br(&mut self, value_cond: Value, block_true: Block, block_false: Block) {
         let instr = Instr::CondBr { block_to_br_true: block_true, block_to_br_false: block_false, value_cond };
         self.blocks[self.current_block].add_instr(instr);
     }

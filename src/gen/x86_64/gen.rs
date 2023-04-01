@@ -37,7 +37,11 @@ impl X86_64Gen {
         }
 
         // replace the offset of all functions
-        for offset in func_offsets {}
+        for offset in func_offsets {
+            let mut func = funcs.get_mut(&offset.func_name).unwrap();
+            let writer = ByteWriter::from_bytes(func.code());
+            //writer.rewrite_i32(offset.offset, )
+        }
     }
 
     fn gen_func(&mut self, func: &mut Function, func_offsets: &mut Vec<FunctionOffset>) {
@@ -114,16 +118,30 @@ impl X86_64Gen {
 
             Instr::Not { .. } => {}
 
-            Instr::Load { .. } => {}
+            Instr::Load { value_to_load, gen_value } => {
+                let mem_reg = allocator.obtain_register_for_value(value_to_load.clone());
+                let reg = allocator.obtain_register_for_value(gen_value.clone());
+                encode.mov_mem_to_reg(mem_reg, reg);
+            }
 
-            Instr::Store { .. } => {}
+            Instr::Store { value_ptr, value_to_store } => {
+                let reg = allocator.obtain_register_for_value(value_ptr.clone());
+                let value = allocator.obtain_register_for_value(value_to_store.clone());
+                encode.mov_reg_to_mem(value, reg);
+            }
 
             Instr::Br { block_to_br } => {
                 let offset = BlockOffset { block: block_to_br.get_id(), offset: encode.jmp() };
                 block_offsets.push(offset);
             }
 
-            Instr::CondBr { .. } => {}
+            Instr::CondBr { value_cond, block_to_br_true, block_to_br_false } => {
+                let true_offset = encode.cond_jmp(allocator.obtain_register_for_value(value_cond.clone()));
+                block_offsets.push(BlockOffset { block: block_to_br_false.get_id(), offset: true_offset });
+
+                let false_offset = encode.jmp();
+                block_offsets.push(BlockOffset { block: block_to_br_true.get_id(), offset: false_offset });
+            }
 
             Instr::CallPtr { .. } => {}
 

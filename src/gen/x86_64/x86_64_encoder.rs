@@ -38,6 +38,20 @@ impl X86_64Encoder {
         self.writer.write_u8(modrm);
     }
 
+    //load
+    pub(crate) fn mov_mem_to_reg(&mut self, mem_reg: X86Register, dest_reg: X86Register) {
+        self.writer.write_u8(0x48);
+        self.writer.write_u8(0x8B);
+        self.writer.write_u8(0x00 | ((mem_reg.encode() & 0x07) << 3) | (dest_reg.encode() & 0x07));
+    }
+
+    //store
+    pub(crate) fn mov_reg_to_mem(&mut self, reg: X86Register, mem_reg: X86Register) {
+        self.writer.write_u8(0x48);
+        self.writer.write_u8(0x89);
+        self.writer.write_u8(0x00 | ((reg.encode() & 0x07) << 3) | (mem_reg.encode() & 0x07));
+    }
+
     pub(crate) fn add_reg_reg(&mut self, left: X86Register, right: X86Register) {
         self.writer.write_u8(0x01);
         let mut modrm: u8 = 0;
@@ -94,22 +108,35 @@ impl X86_64Encoder {
         self.writer.write_i32(0)
     }
 
-    pub(crate) fn cond_jmp(&mut self, reg: X86Register) -> (usize, usize) {
+    pub(crate) fn cond_jmp(&mut self, reg: X86Register) -> usize {
         // cmp reg,0
         self.writer.write_u8(0x48);
         self.writer.write_u8(0x83);
         self.writer.write_u8(0xF8 | (reg.encode() & 7));
-        let false_offset = self.writer.write_u8(0x00);
+        self.writer.write_u8(0x00);
 
         // jz, jump if zero
         self.writer.write_u8(0x0F);
         self.writer.write_u8(0x084);
-        let true_offset = self.writer.write_u8(0);
-        (true_offset, false_offset)
+        self.writer.write_i32(0)
     }
 
     pub(crate) fn ret(&mut self) {
         self.writer.write_u8(0xC3);
+    }
+
+    pub(crate) fn push_shadow(&mut self) {
+        self.writer.write_u8(0x48);
+        self.writer.write_u8(0x83);
+        self.writer.write_u8(0xec);
+        self.writer.write_u8(0x20);
+    }
+
+    pub(crate) fn pop_shadow(&mut self) {
+        self.writer.write_u8(0x48);
+        self.writer.write_u8(0x83);
+        self.writer.write_u8(0xc4);
+        self.writer.write_u8(0x20);
     }
 
     pub(crate) fn bytes(&self) -> &Vec<u8> {
