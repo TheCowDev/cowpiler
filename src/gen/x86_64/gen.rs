@@ -78,13 +78,25 @@ impl X86_64Gen {
                 encode.move_reg_i64(const_reg, *const_value);
             }
 
-            Instr::ConstInt32 { .. } => {}
+            Instr::ConstInt32 { const_value, gen_value } => {
+                let const_reg = allocator.obtain_register_for_value(gen_value.clone());
+                encode.move_reg_i64(const_reg, *const_value as i64);
+            }
 
-            Instr::ConstInt16 { .. } => {}
+            Instr::ConstInt16 { const_value, gen_value } => {
+                let const_reg = allocator.obtain_register_for_value(gen_value.clone());
+                encode.move_reg_i64(const_reg, *const_value as i64);
+            }
 
-            Instr::ConstInt8 { .. } => {}
+            Instr::ConstInt8 { const_value, gen_value } => {
+                let const_reg = allocator.obtain_register_for_value(gen_value.clone());
+                encode.move_reg_i64(const_reg, *const_value as i64);
+            }
 
-            Instr::ConstPtr { .. } => {}
+            Instr::ConstPtr { const_value, gen_value } => {
+                let const_reg = allocator.obtain_register_for_value(gen_value.clone());
+                encode.move_reg_i64(const_reg, *const_value as i64);
+            }
 
             Instr::Add { left_value, right_value, gen_value } => {
                 let left_reg = allocator.obtain_register_for_value(left_value.clone());
@@ -143,7 +155,7 @@ impl X86_64Gen {
                 block_offsets.push(BlockOffset { block: block_to_br_true.get_id(), offset: false_offset });
             }
 
-            Instr::CallPtr { .. } => {}
+            Instr::CallPtr { ptr_to_call, args, return_type, gen_value } => {}
 
             Instr::CallFunc { .. } => {}
 

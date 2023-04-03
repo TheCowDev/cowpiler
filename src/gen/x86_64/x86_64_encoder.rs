@@ -61,6 +61,44 @@ impl X86_64Encoder {
         self.writer.write_u8(modrm);
     }
 
+    pub(crate) fn sub_reg_reg(&mut self, left: X86Register, right: X86Register) {
+        self.writer.write_u8(0x29);
+        let mut modrm: u8 = 0;
+        modrm |= 3 << 6; // set operation to 11 (register-to-register)
+        modrm |= right.encode() << 3; // set destination register
+        modrm |= left.encode(); // set source register
+        self.writer.write_u8(modrm);
+    }
+
+    pub(crate) fn mul_reg_reg(&mut self, left: X86Register, right: X86Register) {
+        self.writer.write_u8(0x0F);
+        self.writer.write_u8(0xAF);
+        let mut modrm: u8 = 0;
+        modrm |= 3 << 6; // set operation to 11 (register-to-register)
+        modrm |= right.encode() << 3; // set destination register
+        modrm |= left.encode(); // set source register
+        self.writer.write_u8(modrm);
+    }
+
+    pub(crate) fn div_reg_reg(&mut self, divisor: X86Register) {
+        // idiv only works on rax and rdx
+        self.writer.write_u8(0xF7);
+        let mut modrm: u8 = 0;
+        modrm |= 3 << 6; // set operation to 11 (register-to-register)
+        modrm |= 7 << 3; // set the idiv operation within the 0xF7 opcode
+        modrm |= divisor.encode(); // set divisor register
+        self.writer.write_u8(modrm);
+    }
+
+    pub(crate) fn eq_reg_reg(&mut self, left: X86Register, right: X86Register) {
+        self.writer.write_u8(0x39);
+        let mut modrm: u8 = 0;
+        modrm |= 3 << 6; // set operation to 11 (register-to-register)
+        modrm |= right.encode() << 3; // set destination register
+        modrm |= left.encode(); // set source register
+        self.writer.write_u8(modrm);
+    }
+
     pub(crate) fn push_reg(&mut self, reg: X86Register) {
         if reg.is_xmm() {
             self.writer.write_u8(0x48); // rex.w prefix
