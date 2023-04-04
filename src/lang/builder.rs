@@ -57,6 +57,14 @@ impl Builder {
         new_value
     }
 
+    pub fn const_ptr(&mut self, value: usize) -> Value {
+        let new_value = Value::new(self.values.len(), Type::ptr());
+        self.values.push(new_value.clone());
+        let instr = Instr::ConstPtr { const_value: value, gen_value: new_value.clone() };
+        self.blocks[self.current_block].add_instr(instr);
+        new_value
+    }
+
     pub fn add(&mut self, left_value: Value, right_value: Value) -> Value {
         let new_value = Value::new(self.values.len(), left_value.get_type());
         self.values.push(new_value.clone());
@@ -64,6 +72,7 @@ impl Builder {
         self.blocks[self.current_block].add_instr(instr);
         new_value
     }
+
 
     pub fn sub(&mut self, left_value: Value, right_value: Value) -> Value {
         let new_value = Value::new(self.values.len(), left_value.get_type());
@@ -147,12 +156,21 @@ impl Builder {
         self.blocks[self.current_block].add_instr(instr);
     }
 
-    pub fn ret(&mut self, value: Value) -> Value {
-        let new_value = Value::new(self.values.len(), Type::i8());
-        self.values.push(new_value.clone());
+    pub fn call_ptr(&mut self, ptr_to_call: Value, args: &Vec<Value>, return_type: Type) -> Value {
+        let new_value = Value::new(self.values.len(), return_type.clone());
+        let instr = Instr::CallPtr {
+            ptr_to_call,
+            args: args.clone(),
+            return_type: return_type.clone(),
+            gen_value: new_value.clone(),
+        };
+        self.blocks[self.current_block].add_instr(instr);
+        new_value.clone()
+    }
+
+    pub fn ret(&mut self, value: Value) {
         let instr = Instr::Ret { value_to_return: value };
         self.blocks[self.current_block].add_instr(instr);
-        new_value
     }
 
     pub fn ret_void(&mut self) {

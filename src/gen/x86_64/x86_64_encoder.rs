@@ -38,6 +38,26 @@ impl X86_64Encoder {
         self.writer.write_u8(modrm);
     }
 
+    pub(crate) fn mov_xmm_to_xmm(&mut self, src: X86Register, dst: X86Register) {
+        if src == dst {
+            return;
+        }
+
+        let src_reg: u8 = src.encode();
+        let dest_reg: u8 = dst.encode();
+
+        self.writer.write_u8(0xF3); // Prefix for SSE scalar operations
+        self.writer.write_u8(0x0F); // Opcode escape byte for SSE instructions
+
+        self.writer.write_u8(0x7E); // Opcode for movq: xmm1 to xmm2
+
+        let mut modrm: u8 = 0;
+        modrm |= 3 << 6; // Register-to-register encoding
+        modrm |= (src_reg & 7) << 3; // 3 bits for destination register
+        modrm |= dest_reg & 7; // 3 bits for source register
+        self.writer.write_u8(modrm);
+    }
+
     //load
     pub(crate) fn mov_mem_to_reg(&mut self, mem_reg: X86Register, dest_reg: X86Register) {
         self.writer.write_u8(0x48);
@@ -175,6 +195,12 @@ impl X86_64Encoder {
         self.writer.write_u8(0x83);
         self.writer.write_u8(0xc4);
         self.writer.write_u8(0x20);
+    }
+
+    pub(crate) fn call(&mut self, reg: X86Register) {
+        self.writer.write_u8(0x48);
+        self.writer.write_u8(0xFF);
+        self.writer.write_u8(0xD0 | (reg.encode() & 0x07));
     }
 
     pub(crate) fn bytes(&self) -> &Vec<u8> {

@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::vec;
 use crate::gen::x86_64::x86_64_allocator::{X86_64Allocator, X86Register};
+use crate::gen::x86_64::x86_64_allocator::X86Register::{RAX, XMM0};
+use crate::gen::x86_64::x86_64_caller::X86_64Caller;
 use crate::gen::x86_64::x86_64_encoder::X86_64Encoder;
 use crate::lang::block::LangBlock;
 use crate::lang::function::{Function};
@@ -155,7 +157,23 @@ impl X86_64Gen {
                 block_offsets.push(BlockOffset { block: block_to_br_true.get_id(), offset: false_offset });
             }
 
-            Instr::CallPtr { ptr_to_call, args, return_type, gen_value } => {}
+            Instr::CallPtr { ptr_to_call, args, return_type, gen_value } => {
+                let caller = X86_64Caller::new();
+                let call_reg = allocator.obtain_register_for_value(ptr_to_call.clone());
+                let regs_to_pop = caller.generate_call(encode, allocator, args);
+
+                encode.push_shadow();
+                encode.call(call_reg);
+                encode.pop_shadow();
+
+                for reg in regs_to_pop.iter().rev() { encode.pop_reg(reg.clone()) };
+
+                if return_type.is_float() {
+                    encode.mov_xmm_to_xmm(XMM0, call_reg);
+                } else {
+                    encode.mov_reg_to_reg(RAX, call_reg);
+                }
+            }
 
             Instr::CallFunc { .. } => {}
 
