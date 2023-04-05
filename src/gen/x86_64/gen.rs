@@ -77,12 +77,19 @@ impl X86_64Gen {
 
             Instr::ConstInt64 { const_value, gen_value } => {
                 let const_reg = allocator.obtain_register_for_value(gen_value.clone());
-                encode.move_reg_i64(const_reg, *const_value);
+                if gen_value.get_type().is_float() {
+                    encode.move_reg_i64(RAX, *const_value);
+                    encode.move_reg_to_xmm(RAX, const_reg);
+                } else {
+                    encode.move_reg_i64(const_reg, *const_value);
+                }
             }
 
             Instr::ConstInt32 { const_value, gen_value } => {
                 let const_reg = allocator.obtain_register_for_value(gen_value.clone());
-                encode.move_reg_i64(const_reg, *const_value as i64);
+                if gen_value.get_type().is_float() {} else {
+                    encode.move_reg_i64(const_reg, *const_value as i64);
+                }
             }
 
             Instr::ConstInt16 { const_value, gen_value } => {
@@ -105,7 +112,8 @@ impl X86_64Gen {
                 let right_reg = allocator.obtain_register_for_value(right_value.clone());
                 let result_reg = allocator.allocate_register(gen_value.clone()).unwrap();
                 if left_reg.is_xmm() {
-                    encode.add_reg_reg(left_reg, right_reg);
+                    encode.add_xmm_xmm(left_reg, right_reg);
+                    encode.mov_reg_to_reg(left_reg, result_reg);
                 } else {
                     encode.add_reg_reg(left_reg, right_reg);
                     encode.mov_reg_to_reg(left_reg, result_reg);
@@ -160,18 +168,21 @@ impl X86_64Gen {
             Instr::CallPtr { ptr_to_call, args, return_type, gen_value } => {
                 let caller = X86_64Caller::new();
                 let call_reg = allocator.obtain_register_for_value(ptr_to_call.clone());
-                let regs_to_pop = caller.generate_call(encode, allocator, args);
+                encode.mov_reg_to_reg(call_reg, RAX);
 
+                let regs_to_pop = caller.generate_call(encode, allocator, args);
                 encode.push_shadow();
-                encode.call(call_reg);
+                encode.call(RAX);
                 encode.pop_shadow();
 
                 for reg in regs_to_pop.iter().rev() { encode.pop_reg(reg.clone()) };
 
+                let ret_reg = allocator.obtain_register_for_value(gen_value.clone());
+
                 if return_type.is_float() {
-                    encode.mov_xmm_to_xmm(XMM0, call_reg);
+                    encode.mov_xmm_to_xmm(XMM0, ret_reg);
                 } else {
-                    encode.mov_reg_to_reg(RAX, call_reg);
+                    encode.mov_reg_to_reg(RAX, ret_reg);
                 }
             }
 
@@ -180,7 +191,7 @@ impl X86_64Gen {
             Instr::Ret { value_to_return } => {
                 let reg_to_return = allocator.obtain_register_for_value(value_to_return.clone());
                 if value_to_return.get_type().is_float() {
-                    encode.mov_reg_to_reg(reg_to_return, X86Register::XMM0);
+                    encode.mov_xmm_to_xmm(reg_to_return, X86Register::XMM0);
                 } else {
                     encode.mov_reg_to_reg(reg_to_return, X86Register::RAX);
                 }

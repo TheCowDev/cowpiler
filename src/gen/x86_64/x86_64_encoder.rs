@@ -38,6 +38,14 @@ impl X86_64Encoder {
         self.writer.write_u8(modrm);
     }
 
+    pub(crate) fn move_reg_to_xmm(&mut self, src: X86Register, dst: X86Register) {
+        self.writer.write_u8(0x66);
+        self.writer.write_u8(0x48);
+        self.writer.write_u8(0x0F);
+        self.writer.write_u8(0x6E);
+        self.writer.write_u8(0xC0 | (dst.encode() & 0x7) << 3 | (src.encode() & 0x7));
+    }
+
     pub(crate) fn mov_xmm_to_xmm(&mut self, src: X86Register, dst: X86Register) {
         if src == dst {
             return;
@@ -46,16 +54,16 @@ impl X86_64Encoder {
         let src_reg: u8 = src.encode();
         let dest_reg: u8 = dst.encode();
 
-        self.writer.write_u8(0xF3); // Prefix for SSE scalar operations
-        self.writer.write_u8(0x0F); // Opcode escape byte for SSE instructions
-
-        self.writer.write_u8(0x7E); // Opcode for movq: xmm1 to xmm2
-
-        let mut modrm: u8 = 0;
-        modrm |= 3 << 6; // Register-to-register encoding
-        modrm |= (src_reg & 7) << 3; // 3 bits for destination register
-        modrm |= dest_reg & 7; // 3 bits for source register
-        self.writer.write_u8(modrm);
+        if src_reg >= X86Register::XMM8.encode() || dest_reg > X86Register::XMM8.encode() {
+            self.writer.write_u8(0x40 | ((dest_reg & 8) >> 1) | ((src_reg & 8) >> 3));
+            self.writer.write_u8(0x0F);
+            self.writer.write_u8(0x28);
+            self.writer.write_u8(0xC0 | ((dest_reg & 7) << 3) | (src_reg & 7));
+        } else {
+            self.writer.write_u8(0x0F);
+            self.writer.write_u8(0x28);
+            self.writer.write_u8(0xC0 | (dest_reg << 3) | src_reg);
+        }
     }
 
     //load
@@ -79,6 +87,18 @@ impl X86_64Encoder {
         modrm |= right.encode() << 3; // set destination register
         modrm |= left.encode(); // set source register
         self.writer.write_u8(modrm);
+    }
+
+    pub(crate) fn add_xmm_xmm(&mut self, left: X86Register, right: X86Register) {
+        let mut rex: u8 = 0x40;
+        if left.encode() >= 8 { rex |= 0x04; };
+        if right.encode() >= 8 { rex |= 0x01; };
+
+        self.writer.write_u8(rex);
+        self.writer.write_u8(0x66);
+        self.writer.write_u8(0x0F);
+        self.writer.write_u8(0x58);
+        self.writer.write_u8(0xC0 | ((left.encode() & 0x07) << 3) | (right.encode() & 0x07));
     }
 
     pub(crate) fn sub_reg_reg(&mut self, left: X86Register, right: X86Register) {
@@ -132,7 +152,7 @@ impl X86_64Encoder {
                 self.writer.write_u8(0x50 + reg.encode());
             } else {
                 self.writer.write_u8(0x41); //rex prefix for extended registers
-                self.writer.write_u8(0x50 + reg.encode() - X86Register::R8.encode());
+                self.writer.write_u8(0x50 + (reg.encode() - X86Register::R8.encode()));
             }
         }
     }

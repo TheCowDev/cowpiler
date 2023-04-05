@@ -49,11 +49,10 @@ pub(crate) struct X86_64Allocator {
 impl X86_64Allocator {
     pub(crate) fn new() -> Self {
         let registers = vec![X86Register::RCX,
-                             X86Register::RDX,
-                             X86Register::RBP, X86Register::RDI, X86Register::RSI, X86Register::R8,
+                             X86Register::RDX, X86Register::RBX, X86Register::RDI, X86Register::RSI, X86Register::R8,
                              X86Register::R9, X86Register::R10, X86Register::R11,
                              X86Register::R12, X86Register::R13, X86Register::R14, X86Register::R15,
-                             X86Register::XMM0, X86Register::XMM1, X86Register::XMM2, X86Register::XMM3,
+                             X86Register::XMM1, X86Register::XMM2, X86Register::XMM3,
                              X86Register::XMM4, X86Register::XMM5, X86Register::XMM6, X86Register::XMM7,
                              X86Register::XMM8, X86Register::XMM9, X86Register::XMM10, X86Register::XMM11,
                              X86Register::XMM12, X86Register::XMM13, X86Register::XMM14,

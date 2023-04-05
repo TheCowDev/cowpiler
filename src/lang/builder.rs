@@ -34,7 +34,7 @@ impl Builder {
     }
 
     pub fn const_i16(&mut self, value: i16) -> Value {
-        let new_value = Value::new(self.values.len(), Type::i8());
+        let new_value = Value::new(self.values.len(), Type::i16());
         self.values.push(new_value.clone());
         let instr = Instr::ConstInt16 { const_value: value, gen_value: new_value.clone() };
         self.blocks[self.current_block].add_instr(instr);
@@ -42,7 +42,7 @@ impl Builder {
     }
 
     pub fn const_i32(&mut self, value: i32) -> Value {
-        let new_value = Value::new(self.values.len(), Type::i8());
+        let new_value = Value::new(self.values.len(), Type::i32());
         self.values.push(new_value.clone());
         let instr = Instr::ConstInt32 { const_value: value, gen_value: new_value.clone() };
         self.blocks[self.current_block].add_instr(instr);
@@ -50,9 +50,25 @@ impl Builder {
     }
 
     pub fn const_i64(&mut self, value: i64) -> Value {
-        let new_value = Value::new(self.values.len(), Type::i8());
+        let new_value = Value::new(self.values.len(), Type::i64());
         self.values.push(new_value.clone());
         let instr = Instr::ConstInt64 { const_value: value, gen_value: new_value.clone() };
+        self.blocks[self.current_block].add_instr(instr);
+        new_value
+    }
+
+    pub fn const_f32(&mut self, value: f32) -> Value {
+        let new_value = Value::new(self.values.len(), Type::f64());
+        self.values.push(new_value.clone());
+        let instr = Instr::ConstInt32 { const_value: i32::from_le_bytes(value.to_le_bytes()), gen_value: new_value.clone() };
+        self.blocks[self.current_block].add_instr(instr);
+        new_value
+    }
+
+    pub fn const_f64(&mut self, value: f64) -> Value {
+        let new_value = Value::new(self.values.len(), Type::f64());
+        self.values.push(new_value.clone());
+        let instr = Instr::ConstInt64 { const_value: i64::from_le_bytes(value.to_le_bytes()), gen_value: new_value.clone() };
         self.blocks[self.current_block].add_instr(instr);
         new_value
     }

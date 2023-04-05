@@ -44,21 +44,23 @@ impl X86_64Caller {
 
         for value in values {
             let reg = allocator.obtain_register_for_value(value.clone());
-            let reg_to_mov = self.args_register[arg_index];
+
             if reg.is_xmm() {
-                if allocator.is_register_allocated(reg_to_mov) {
+                let reg_to_mov = self.args_xmm[xmm_index];
+                if allocator.is_register_allocated(reg_to_mov) && reg_to_mov != reg {
+                    encoder.push_reg(reg_to_mov);
+                    pushed_register.push(reg_to_mov);
+                }
+                encoder.mov_xmm_to_xmm(reg, reg_to_mov);
+                xmm_index += 1;
+            } else {
+                let reg_to_mov = self.args_register[arg_index];
+                if allocator.is_register_allocated(reg_to_mov) && reg_to_mov != reg {
                     encoder.push_reg(reg_to_mov);
                     pushed_register.push(reg_to_mov);
                 }
                 encoder.mov_reg_to_reg(reg, reg_to_mov);
                 arg_index += 1;
-            } else {
-                if allocator.is_register_allocated(reg_to_mov) {
-                    encoder.push_reg(reg_to_mov);
-                    pushed_register.push(reg_to_mov);
-                }
-                encoder.mov_xmm_to_xmm(reg, self.args_xmm[xmm_index]);
-                xmm_index += 1;
             }
         }
 
